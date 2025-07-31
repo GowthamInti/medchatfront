@@ -30,6 +30,6 @@ jobs:
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v3
         with:
-          context: /frontend  # Path to the Dockerfile
+          context: ./frontend  # Path to the Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/medfrontend:latest
