@@ -9,12 +9,30 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+// Request interceptor to add dynamic auth key and username
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
+    const userType = localStorage.getItem('user_type');
+    let userData = localStorage.getItem('user_data');
+    let username = null;
+
+    if (userData) {
+      try {
+        userData = JSON.parse(userData);
+        username = userData.username;
+      } catch {
+        username = null;
+      }
+    }
+
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Authorization = token; // No 'Bearer ' prefix!
+      if (userType === 'admin' && username) {
+        config.headers['X-Admin-Username'] = username;
+      } else if (userType === 'user' && username) {
+        config.headers['X-User-Username'] = username;
+      }
     }
     return config;
   },
