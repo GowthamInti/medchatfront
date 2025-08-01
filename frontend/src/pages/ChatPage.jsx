@@ -1,17 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, UserPlus, Shield } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useChat } from '../hooks/useChat';
 import ChatHeader from '../components/ChatHeader';
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
+import { authAPI } from '../api/auth'; // Make sure this import is correct!
 
 const ChatPage = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, userType } = useAuth();
   const [showSettings, setShowSettings] = useState(false);
-  
+
+  // Admin Add User states
+  const [addUserForm, setAddUserForm] = useState({
+    username: '',
+    password: '',
+    email: '',
+    full_name: '',
+  });
+  const [addUserLoading, setAddUserLoading] = useState(false);
+  const [addUserError, setAddUserError] = useState('');
+  const [addUserSuccess, setAddUserSuccess] = useState('');
+
   const {
     messages,
     isLoading: chatLoading,
@@ -69,6 +81,26 @@ const ChatPage = () => {
   if (!isAuthenticated) {
     return null;
   }
+
+  // Add user form handlers for admin
+  const handleAddUserChange = (e) => {
+    setAddUserForm({ ...addUserForm, [e.target.name]: e.target.value });
+    setAddUserError('');
+    setAddUserSuccess('');
+  };
+
+  const handleAddUserSubmit = async (e) => {
+    e.preventDefault();
+    setAddUserLoading(true);
+    try {
+      await authAPI.addUser(addUserForm);
+      setAddUserSuccess('User added successfully!');
+      setAddUserForm({ username: '', password: '', email: '', full_name: '' });
+    } catch (err) {
+      setAddUserError(err.response?.data?.detail || 'Failed to add user');
+    }
+    setAddUserLoading(false);
+  };
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -146,17 +178,89 @@ const ChatPage = () => {
         grammarSuggestions={getGrammarSuggestions()}
       />
 
-      {/* Settings panel (optional for future) */}
+      {/* Settings panel */}
       {showSettings && (
         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 m-4 max-w-md w-full">
-            <h3 className="text-lg font-semibold mb-4">Settings</h3>
-            <p className="text-gray-600 mb-4">
-              Settings panel - Coming soon!
-            </p>
+            <h3 className="text-lg font-semibold mb-4 flex items-center">
+              <Shield className="w-5 h-5 text-medical-600 mr-2" />
+              Settings
+            </h3>
+            {userType === 'admin' ? (
+              <form className="space-y-3" onSubmit={handleAddUserSubmit}>
+                <div className="text-lg font-medium text-medical-700 mb-2 flex items-center">
+                  <UserPlus className="w-5 h-5 mr-2" />
+                  Add User
+                </div>
+                <input
+                  type="text"
+                  name="username"
+                  value={addUserForm.username}
+                  onChange={handleAddUserChange}
+                  required
+                  placeholder="Username"
+                  className="w-full px-3 py-2 border rounded"
+                />
+                <input
+                  type="password"
+                  name="password"
+                  value={addUserForm.password}
+                  onChange={handleAddUserChange}
+                  required
+                  placeholder="Password"
+                  className="w-full px-3 py-2 border rounded"
+                />
+                <input
+                  type="email"
+                  name="email"
+                  value={addUserForm.email}
+                  onChange={handleAddUserChange}
+                  required
+                  placeholder="Email"
+                  className="w-full px-3 py-2 border rounded"
+                />
+                <input
+                  type="text"
+                  name="full_name"
+                  value={addUserForm.full_name}
+                  onChange={handleAddUserChange}
+                  required
+                  placeholder="Full Name"
+                  className="w-full px-3 py-2 border rounded"
+                />
+                {addUserError && (
+                  <div className="flex items-center text-error-700 bg-error-50 border border-error-200 rounded p-2">
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    <span>{addUserError}</span>
+                  </div>
+                )}
+                {addUserSuccess && (
+                  <div className="flex items-center text-success-700 bg-success-50 border border-success-200 rounded p-2">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    <span>{addUserSuccess}</span>
+                  </div>
+                )}
+                <button
+                  type="submit"
+                  disabled={addUserLoading}
+                  className="w-full flex items-center justify-center py-2 px-4 rounded bg-medical-600 text-white font-medium hover:bg-medical-700 transition"
+                >
+                  {addUserLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <UserPlus className="w-4 h-4 mr-2" />
+                  )}
+                  Add User
+                </button>
+              </form>
+            ) : (
+              <p className="text-gray-600 mb-4">
+                Settings panel - Coming soon!
+              </p>
+            )}
             <button
               onClick={() => setShowSettings(false)}
-              className="w-full px-4 py-2 bg-medical-600 text-white rounded-lg hover:bg-medical-700 transition-colors duration-200"
+              className="w-full px-4 py-2 bg-medical-600 text-white rounded-lg hover:bg-medical-700 transition-colors duration-200 mt-4"
             >
               Close
             </button>
