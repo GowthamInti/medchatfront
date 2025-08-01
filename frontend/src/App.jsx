@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './auth/AuthContext';
 import LoginPage from './pages/LoginPage';
 import ChatPage from './pages/ChatPage';
+import AdminUsersPage from './pages/AdminUsersPage';
+import ProtectedRoute from './components/ProtectedRoute';
 import './index.css';
 
 function App() {
@@ -17,8 +19,25 @@ function App() {
             {/* Login page */}
             <Route path="/login" element={<LoginPage />} />
             
-            {/* Chat page */}
-            <Route path="/chat" element={<ChatPage />} />
+            {/* Chat page - protected route */}
+            <Route 
+              path="/chat" 
+              element={
+                <ProtectedRoute>
+                  <ChatPage />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Admin Users page - admin only */}
+            <Route 
+              path="/admin/users" 
+              element={
+                <ProtectedRoute adminOnly={true}>
+                  <AdminUsersPage />
+                </ProtectedRoute>
+              } 
+            />
             
             {/* Catch all route - redirect to login */}
             <Route path="*" element={<Navigate to="/login" replace />} />
