@@ -2,8 +2,8 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { chatAPI } from '../api/chat';
 import { useAuth } from './useAuth';
 
-export const useChat = (sessionId = 'medical-transcription') => {
-  const { user } = useAuth();
+export const useChat = () => {
+  const { user, authToken } = useAuth(); // Ensure useAuth returns the token string
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -47,6 +47,10 @@ Ready to help with your medical transcription needs!`,
 
   // Send message
   const sendMessage = useCallback(async (messageContent, options = {}) => {
+    if (!authToken) {
+      setError('You must be logged in to use the chat.');
+      return;
+    }
     if (!messageContent.trim()) return;
 
     setError(null);
@@ -66,7 +70,6 @@ Ready to help with your medical transcription needs!`,
     try {
       // Enhance the message with medical context if specified
       let enhancedMessage = messageContent;
-      
       if (options.transcriptionType) {
         enhancedMessage = `[${options.transcriptionType.toUpperCase()} TRANSCRIPTION]
 ${messageContent}
@@ -86,8 +89,20 @@ Please format this as a professional radiology report with:
         enhancedMessage += `\n\nGrammar Requirements: ${options.grammarRules}`;
       }
 
-      // Send to API
-      const response = await chatAPI.sendMessage(sessionId, enhancedMessage);
+      // Use authToken as sessionId
+      const sessionId = authToken;
+
+      // Send to API: Pass token via Authorization header and as sessionId
+      const response = await chatAPI.sendMessage(
+        sessionId, // <-- sessionId is the token!
+        enhancedMessage,
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            'X-User-Username': user?.username || '',
+          },
+        }
+      );
 
       // Add AI response
       const aiMessage = {
@@ -106,7 +121,7 @@ Please format this as a professional radiology report with:
       console.error('Error sending message:', error);
       setError(error.response?.data?.detail || 'Failed to send message');
       setIsConnected(false);
-      
+
       // Add error message
       const errorMessage = {
         id: Date.now() + 1,
@@ -118,13 +133,22 @@ Please format this as a professional radiology report with:
     } finally {
       setIsLoading(false);
     }
-  }, [sessionId, user]);
+  }, [authToken, user]);
 
   // Clear chat session
   const clearSession = useCallback(async () => {
+    if (!authToken) {
+      setError('You must be logged in to clear the session.');
+      return;
+    }
     try {
       setIsLoading(true);
-      await chatAPI.clearSession(sessionId);
+      await chatAPI.clearSession(authToken, { // <-- sessionId is token!
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          'X-User-Username': user?.username || '',
+        },
+      });
       setMessages([]);
       setError(null);
     } catch (error) {
@@ -133,44 +157,40 @@ Please format this as a professional radiology report with:
     } finally {
       setIsLoading(false);
     }
-  }, [sessionId]);
+  }, [authToken, user]);
 
   // Get quick transcription suggestions
-  const getTranscriptionSuggestions = useCallback(() => {
-    return [
-      {
-        title: 'Chest X-Ray',
-        prompt: 'Please transcribe this chest X-ray finding with proper medical formatting',
-        type: 'chest-xray',
-      },
-      {
-        title: 'CT Scan',
-        prompt: 'Format this CT scan report with standard radiology structure',
-        type: 'ct-scan',
-      },
-      {
-        title: 'MRI Report',
-        prompt: 'Create a structured MRI report from this transcription',
-        type: 'mri',
-      },
-      {
-        title: 'Ultrasound',
-        prompt: 'Format this ultrasound finding with proper terminology',
-        type: 'ultrasound',
-      },
-    ];
-  }, []);
+  const getTranscriptionSuggestions = useCallback(() => [
+    {
+      title: 'Chest X-Ray',
+      prompt: 'Please transcribe this chest X-ray finding with proper medical formatting',
+      type: 'chest-xray',
+    },
+    {
+      title: 'CT Scan',
+      prompt: 'Format this CT scan report with standard radiology structure',
+      type: 'ct-scan',
+    },
+    {
+      title: 'MRI Report',
+      prompt: 'Create a structured MRI report from this transcription',
+      type: 'mri',
+    },
+    {
+      title: 'Ultrasound',
+      prompt: 'Format this ultrasound finding with proper terminology',
+      type: 'ultrasound',
+    },
+  ], []);
 
   // Get grammar improvement suggestions
-  const getGrammarSuggestions = useCallback(() => {
-    return [
-      'Correct medical terminology and spelling',
-      'Improve sentence structure and clarity',
-      'Standardize abbreviations and formatting',
-      'Ensure proper tense and voice consistency',
-      'Add appropriate medical report sections',
-    ];
-  }, []);
+  const getGrammarSuggestions = useCallback(() => [
+    'Correct medical terminology and spelling',
+    'Improve sentence structure and clarity',
+    'Standardize abbreviations and formatting',
+    'Ensure proper tense and voice consistency',
+    'Add appropriate medical report sections',
+  ], []);
 
   return {
     messages,
