@@ -1,14 +1,20 @@
 import React from 'react';
-import { LogOut, User, Shield, Wifi, WifiOff, Settings } from 'lucide-react';
+import { LogOut, User, Shield, Wifi, WifiOff, Settings, Users } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 const ChatHeader = ({ isConnected, onClearSession, onShowSettings }) => {
   const { user, userType, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     if (window.confirm('Are you sure you want to logout?')) {
       await logout();
     }
+  };
+
+  const navigateToUsers = () => {
+    navigate('/admin/users');
   };
 
   return (
@@ -65,6 +71,17 @@ const ChatHeader = ({ isConnected, onClearSession, onShowSettings }) => {
 
           {/* Action buttons */}
           <div className="flex items-center space-x-1">
+            {/* Admin Users button - only for admin */}
+            {userType === 'admin' && (
+              <button
+                onClick={navigateToUsers}
+                className="p-2 text-gray-400 hover:text-medical-600 hover:bg-medical-50 rounded-md transition-colors duration-200"
+                title="Manage Users"
+              >
+                <Users className="w-4 h-4" />
+              </button>
+            )}
+
             {onShowSettings && (
               <button
                 onClick={onShowSettings}
