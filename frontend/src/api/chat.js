@@ -10,12 +10,6 @@ export const chatAPI = {
         session_id: authToken,
         message: message,
       },
-      {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          'X-User-Username': username,
-        },
-      }
     );
     return response.data;
   },
