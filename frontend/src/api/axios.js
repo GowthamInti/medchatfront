@@ -27,11 +27,7 @@ api.interceptors.request.use(
     }
 
     if (token) {
-      config.headers.Authorization = token; // No 'Bearer ' prefix!
-      if (userType === 'admin' && username) {
-        config.headers['X-Admin-Username'] = username;
-      } else if (userType === 'user' && username) {
-        config.headers['X-User-Username'] = username;
+      config.headers.Authorization = `Bearer ${token}`;
       }
     }
     return config;
