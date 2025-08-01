@@ -12,6 +12,12 @@ export const authAPI = {
     const response = await api.post('/admin/user-login', credentials);
     return response.data;
   },
+  
+  // Add user (admin only)
+  addUser: async (userData) => {
+    const response = await api.post('/admin/users', userData);
+    return response.data;
+  },
 
   // Admin logout
   adminLogout: async () => {
