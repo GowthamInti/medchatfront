@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
   Plus, 
@@ -13,8 +14,13 @@ import {
   Loader2,
   ArrowLeft
 } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { authAPI } from '../api/auth';
 
 const AdminUsersPage = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, userType, loading: authLoading } = useAuth();
+  
   const [showAddUserForm, setShowAddUserForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -27,15 +33,12 @@ const AdminUsersPage = () => {
     full_name: ''
   });
 
-  // Simulate auth context for demo - in real app, use useAuth hook
-  const isAuthenticated = true;
-  const userType = 'admin';
-  const authLoading = false;
-
-  // Remove navigation logic for demo
+  // Redirect if not authenticated or not admin
   useEffect(() => {
-    // In real app: check authentication and redirect if needed
-  }, []);
+    if (!authLoading && (!isAuthenticated || userType !== 'admin')) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, userType, authLoading, navigate]);
 
   // Clear message after delay
   useEffect(() => {
@@ -101,8 +104,7 @@ const AdminUsersPage = () => {
 
     setIsSubmitting(true);
     try {
-      // Simulate API call - in real app, use authAPI.addUser(formData)
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await authAPI.addUser(formData);
       
       setMessage({
         type: 'success',
@@ -123,7 +125,7 @@ const AdminUsersPage = () => {
       console.error('Error creating user:', error);
       setMessage({
         type: 'error',
-        content: 'Failed to create user. Please try again.'
+        content: error.response?.data?.detail || 'Failed to create user. Please try again.'
       });
     } finally {
       setIsSubmitting(false);
@@ -167,7 +169,7 @@ const AdminUsersPage = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => console.log('Navigate to chat')}
+                onClick={() => navigate('/chat')}
                 className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors duration-200"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -248,7 +250,7 @@ const AdminUsersPage = () => {
               </button>
             </div>
 
-            <div onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Username */}
                 <div>
@@ -367,7 +369,7 @@ const AdminUsersPage = () => {
                   )}
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         )}
 
