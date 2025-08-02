@@ -9,7 +9,7 @@ export const useChat = () => {
   const [error, setError] = useState(null);
   const [isConnected, setIsConnected] = useState(true);
   const messagesEndRef = useRef(null);
-
+  const token = localStorage.getItem('access_token');
   // Scroll to bottom of messages
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -90,18 +90,12 @@ Please format this as a professional radiology report with:
       }
 
       // Use authToken as sessionId
-      const sessionId = authToken;
+      const sessionId = token;
 
       // Send to API: Pass token via Authorization header and as sessionId
       const response = await chatAPI.sendMessage(
         sessionId, // <-- sessionId is the token!
         enhancedMessage,
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            'X-User-Username': user?.username || '',
-          },
-        }
       );
 
       // Add AI response
