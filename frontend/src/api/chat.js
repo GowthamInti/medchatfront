@@ -2,12 +2,12 @@ import api from './axios';
 
 export const chatAPI = {
   // Send message to chat
-  sendMessage: async (authToken, message, { username = '' } = {}) => {
+  sendMessage: async (sessionid, message, { username = '' } = {}) => {
     // session_id is the token, and Authorization header is set
     const response = await api.post(
       '/chat/',
       {
-        session_id: authToken,
+        session_id: sessionid,
         message: message,
       },
     );
@@ -15,16 +15,16 @@ export const chatAPI = {
   },
 
   // Clear chat session
-  clearSession: async (authToken, { username = '' } = {}) => {
+  clearSession: async (sessionid, { username = '' } = {}) => {
     // sessionId is the token value
     const response = await api.delete(
-      `/chat/sessions/${authToken}`,
+      `/chat/sessions/${sessionid}`,
     );
     return response.data;
   },
 
   // Get memory statistics (admin only)
-  getMemoryStats: async (authToken, { username = '' } = {}) => {
+  getMemoryStats: async (sessionid, { username = '' } = {}) => {
     const response = await api.get('/chat/memory/stats', 
     );
     return response.data;
