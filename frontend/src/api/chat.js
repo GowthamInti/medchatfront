@@ -19,24 +19,14 @@ export const chatAPI = {
     // sessionId is the token value
     const response = await api.delete(
       `/chat/sessions/${authToken}`,
-      {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          'X-User-Username': username,
-        },
-      }
     );
     return response.data;
   },
 
   // Get memory statistics (admin only)
   getMemoryStats: async (authToken, { username = '' } = {}) => {
-    const response = await api.get('/chat/memory/stats', {
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-        'X-User-Username': username,
-      },
-    });
+    const response = await api.get('/chat/memory/stats', 
+    );
     return response.data;
   },
 
