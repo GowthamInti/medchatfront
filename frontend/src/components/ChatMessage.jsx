@@ -71,6 +71,26 @@ const ChatMessage = ({ message }) => {
               <div className="text-gray-800 whitespace-pre-wrap">
                 {message.content}
               </div>
+              {message.attachedFiles && message.attachedFiles.length > 0 && (
+                <div className="mt-3 border-t border-primary-200 pt-3">
+                  <p className="text-xs font-medium text-primary-700 mb-2">📎 Attached Files:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {message.attachedFiles.map((file, index) => (
+                      <div 
+                        key={index}
+                        className="inline-flex items-center px-2 py-1 bg-primary-100 border border-primary-300 rounded-full text-xs"
+                      >
+                        <span className="font-medium text-primary-800">{file.name}</span>
+                        {file.size && (
+                          <span className="ml-1 text-primary-600">
+                            ({(file.size / 1024).toFixed(1)}KB)
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );

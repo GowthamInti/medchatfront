@@ -13,22 +13,10 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
-    const userType = localStorage.getItem('user_type');
-    let userData = localStorage.getItem('user_data');
-    let username = null;
-
-    if (userData) {
-      try {
-        userData = JSON.parse(userData);
-        username = userData.username;
-      } catch {
-        username = null;
-      }
-    }
-
+    // const userType = localStorage.getItem('user_type');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      }
+    }
     return config;
   },
   (error) => {

@@ -1,18 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Send, 
-  Paperclip, 
+  Send,  
   Mic, 
   Square, 
   Settings, 
-  FileText, 
-  Brain,
-  Loader2
+  Loader2,
+  Paperclip
 } from 'lucide-react';
 
-const ChatInput = ({ 
-  onSendMessage, 
-  isLoading, 
+const ChatInput = ({
+  onSendMessage,
+  isLoading,
   disabled,
   transcriptionSuggestions = [],
   grammarSuggestions = []
@@ -24,6 +22,8 @@ const ChatInput = ({
   const [grammarRules, setGrammarRules] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const [attachedFiles, setAttachedFiles] = useState([]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -43,12 +43,13 @@ const ChatInput = ({
       grammarRules: grammarRules || undefined,
     };
 
-    onSendMessage(message, options);
-    setMessage('');
-    setTranscriptionType('');
-    setOutputTemplate('');
-    setGrammarRules('');
+    onSendMessage(message, options, attachedFiles);
+    setMessage("");
+    setTranscriptionType("");
+    setOutputTemplate("");
+    setGrammarRules("");
     setShowOptions(false);
+    setAttachedFiles([]);
   };
 
   const handleKeyDown = (e) => {
@@ -72,6 +73,40 @@ const ChatInput = ({
   const handleMicToggle = () => {
     setIsRecording(!isRecording);
     // TODO: Implement speech recognition
+  };
+
+  const handleAttachClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    const validFiles = files.filter(file => {
+      const fileType = file.type;
+      return fileType.startsWith("image/") || 
+             fileType === "application/pdf" || 
+             fileType === "application/msword" || 
+             fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    });
+    setAttachedFiles(prev => [...prev, ...validFiles]);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Add visual cue for drag over
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const files = Array.from(e.dataTransfer.files);
+    setAttachedFiles(prev => [...prev, ...files]);
+    // Remove visual cue for drag over
+  };
+
+  const handleRemoveFile = (index) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -171,7 +206,30 @@ const ChatInput = ({
       )}
 
       {/* Input Area */}
-      <div className="p-4">
+      <div 
+        className="p-4"
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        {attachedFiles.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {attachedFiles.map((file, index) => (
+              <div 
+                key={index} 
+                className="flex items-center bg-gray-100 rounded-full pl-3 pr-2 py-1 text-sm text-gray-700"
+              >
+                {file.name}
+                <button 
+                  type="button" 
+                  onClick={() => handleRemoveFile(index)} 
+                  className="ml-1 p-1 rounded-full hover:bg-gray-200"
+                >
+                  &times;
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-3">
           {/* Main input */}
           <div className="flex items-end space-x-2">
@@ -212,6 +270,25 @@ const ChatInput = ({
                 ) : (
                   <Mic className="w-4 h-4" />
                 )}
+              </button>
+
+              {/* File attachment */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept="image/*,.pdf,.doc,.docx"
+                multiple
+              />
+              <button
+                type="button"
+                onClick={handleAttachClick}
+                disabled={disabled || isLoading}
+                className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                title="Attach files"
+              >
+                <Paperclip className="w-4 h-4" />
               </button>
 
               {/* Options toggle */}

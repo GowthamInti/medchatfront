@@ -3,13 +3,13 @@ import { chatAPI } from '../api/chat';
 import { useAuth } from './useAuth';
 
 export const useChat = () => {
-  const { user, authToken } = useAuth(); // Ensure useAuth returns the token string
+  const { user, token: authToken } = useAuth();
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isConnected, setIsConnected] = useState(true);
   const messagesEndRef = useRef(null);
-  const token = localStorage.getItem('access_token');
+
   // Scroll to bottom of messages
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -19,34 +19,8 @@ export const useChat = () => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // Add initial medical transcription prompt
-  useEffect(() => {
-    if (messages.length === 0) {
-      const initialMessage = {
-        id: 'system-prompt',
-        type: 'system',
-        content: `Welcome to the Medical Transcription AI Assistant. I'm specialized in radiology transcription with structured formatting and grammar correction.
-
-**How to use:**
-1. **Input your raw transcription** - I'll improve grammar and structure
-2. **Specify template preferences** - Normal, detailed, or custom format
-3. **Review the output** - Professional, structured medical reports
-
-**Specializations:**
-• Radiology reports (X-ray, CT, MRI, Ultrasound)
-• Medical terminology accuracy
-• Proper formatting and structure
-• Grammar and clarity enhancement
-
-Ready to help with your medical transcription needs!`,
-        timestamp: new Date().toISOString(),
-      };
-      setMessages([initialMessage]);
-    }
-  }, [messages.length]);
-
   // Send message
-  const sendMessage = useCallback(async (messageContent, options = {}) => {
+  const sendMessage = useCallback(async (messageContent, options = {}, attachedFiles = []) => {
     if (!authToken) {
       setError('You must be logged in to use the chat.');
       return;
@@ -56,13 +30,18 @@ Ready to help with your medical transcription needs!`,
     setError(null);
     setIsLoading(true);
 
-    // Add user message
+    // Add user message with attached files
     const userMessage = {
       id: Date.now(),
       type: 'user',
       content: messageContent.trim(),
       timestamp: new Date().toISOString(),
       user: user?.username || 'User',
+      attachedFiles: attachedFiles.length > 0 ? attachedFiles.map(file => ({
+        name: file.name,
+        type: file.type,
+        size: file.size
+      })) : undefined, // Only include if there are files
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -89,13 +68,19 @@ Please format this as a professional radiology report with:
         enhancedMessage += `\n\nGrammar Requirements: ${options.grammarRules}`;
       }
 
+      // Add file information to the message if files are attached
+      if (attachedFiles.length > 0) {
+        enhancedMessage += `\n\nAttached Files: ${attachedFiles.map(f => f.name).join(', ')}`;
+      }
+
       // Use authToken as sessionId
-      const sessionId = token;
+      const sessionId = authToken;
 
       // Send to API: Pass token via Authorization header and as sessionId
       const response = await chatAPI.sendMessage(
         sessionId, // <-- sessionId is the token!
         enhancedMessage,
+        attachedFiles,
       );
 
       // Add AI response

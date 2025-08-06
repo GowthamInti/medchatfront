@@ -2,20 +2,28 @@ import api from './axios';
 
 export const chatAPI = {
   // Send message to chat
-  sendMessage: async (sessionId, message, { username = '' } = {}) => {
-    // session_id is the token, and Authorization header is set
+  sendMessage: async (sessionId, message, attachedFiles = []) => {
+    const formData = new FormData();
+    formData.append("session_id", sessionId);
+    formData.append("message", message);
+    attachedFiles.forEach((file) => {
+      formData.append("files", file);
+    });
+
     const response = await api.post(
-      '/chat/',
+      "/chat/",
+      formData,
       {
-        session_id: sessionId,
-        message: message,
-      },
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
     );
     return response.data;
   },
 
   // Clear chat session
-  clearSession: async (sessionId, { username = '' } = {}) => {
+  clearSession: async (sessionId) => {
     // sessionId is the token value
     const response = await api.delete(
       `/chat/sessions/${sessionId}`,
@@ -24,15 +32,15 @@ export const chatAPI = {
   },
 
   // Get memory statistics (admin only)
-  getMemoryStats: async (sessionId, { username = '' } = {}) => {
-    const response = await api.get('/chat/memory/stats', 
+  getMemoryStats: async (sessionId) => {
+    const response = await api.get(
+      '/chat/memory/stats',
+      {
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      }
     );
-    return response.data;
-  },
-
-  // Get health status (usually public, but add header if needed)
-  getHealth: async () => {
-    const response = await api.get('/health');
     return response.data;
   },
 

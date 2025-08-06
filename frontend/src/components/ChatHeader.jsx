@@ -6,7 +6,6 @@ import {
   Wifi, 
   WifiOff, 
   Settings, 
-  Users,
   ChevronDown,
   UserPlus,
   Database,
