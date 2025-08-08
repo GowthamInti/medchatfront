@@ -2,10 +2,16 @@ import api from './axios';
 
 export const chatAPI = {
   // Send message to chat
-  sendMessage: async (sessionId, message, attachedFiles = []) => {
+  sendMessage: async (sessionId, message, attachedFiles = [], taskName = null) => {
     const formData = new FormData();
     formData.append("session_id", sessionId);
     formData.append("message", message);
+    
+    // Add task_name if provided
+    if (taskName) {
+      formData.append("task_name", taskName);
+    }
+    
     attachedFiles.forEach((file) => {
       formData.append("files", file);
     });
