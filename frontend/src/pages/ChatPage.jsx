@@ -43,6 +43,11 @@ const ChatPage = () => {
     }
   };
 
+  // Handle sending message with task name
+  const handleSendMessage = async (message, options, attachedFiles, taskName) => {
+    await sendMessage(message, options, attachedFiles, taskName);
+  };
+
   // Clear chat error after a delay
   useEffect(() => {
     if (chatError) {
@@ -107,12 +112,13 @@ const ChatPage = () => {
                 </h2>
                 <p className="text-gray-600 mb-4">
                   I'm here to help you create professional radiology reports from your transcriptions.
-                  Start by typing your raw transcription below.
+                  Start by typing your raw transcription below and selecting a task type.
                 </p>
                 <div className="text-sm text-gray-500 space-y-1">
                   <p>• Supports all radiology modalities</p>
                   <p>• Grammar and structure correction</p>
                   <p>• Professional medical formatting</p>
+                  <p>• Task-specific processing</p>
                 </div>
               </div>
             </div>
@@ -139,7 +145,7 @@ const ChatPage = () => {
 
       {/* Chat input */}
       <ChatInput
-        onSendMessage={sendMessage}
+        onSendMessage={handleSendMessage}
         isLoading={chatLoading}
         disabled={!isConnected}
         transcriptionSuggestions={getTranscriptionSuggestions()}
@@ -156,15 +162,4 @@ const ChatPage = () => {
             </p>
             <button
               onClick={() => setShowSettings(false)}
-              className="w-full px-4 py-2 bg-medical-600 text-white rounded-lg hover:bg-medical-700 transition-colors duration-200"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default ChatPage;
+              className="w-full px-4 py-2 bg-medical-600 text-white rounded-lg hover
