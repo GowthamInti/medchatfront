@@ -162,4 +162,15 @@ const ChatPage = () => {
             </p>
             <button
               onClick={() => setShowSettings(false)}
-              className="w-full px-4 py-2 bg-medical-600 text-white rounded-lg hover
+              className="w-full px-4 py-2 bg-medical-600 text-white rounded-lg hover:bg-medical-700 transition-colors duration-200"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ChatPage;
