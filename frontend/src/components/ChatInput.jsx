@@ -43,7 +43,10 @@ const ChatInput = ({
       grammarRules: grammarRules || undefined,
     };
 
-    onSendMessage(message, options, attachedFiles);
+    // Pass transcriptionType as taskName to the parent component
+    const taskName = transcriptionType || null;
+
+    onSendMessage(message, options, attachedFiles, taskName);
     setMessage("");
     setTranscriptionType("");
     setOutputTemplate("");
@@ -118,19 +121,22 @@ const ChatInput = ({
             {/* Transcription Type */}
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
-                Transcription Type
+                Task Type
               </label>
               <select
                 value={transcriptionType}
                 onChange={(e) => setTranscriptionType(e.target.value)}
                 className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-medical-500"
               >
-                <option value="">Select type...</option>
+                <option value="">Select task type...</option>
                 <option value="chest-xray">Chest X-Ray</option>
                 <option value="ct-scan">CT Scan</option>
                 <option value="mri">MRI</option>
                 <option value="ultrasound">Ultrasound</option>
                 <option value="general">General Radiology</option>
+                <option value="grammar-correction">Grammar Correction</option>
+                <option value="medical-formatting">Medical Formatting</option>
+                <option value="report-structuring">Report Structuring</option>
               </select>
             </div>
 
@@ -170,7 +176,7 @@ const ChatInput = ({
           <div className="mt-3 space-y-2">
             {transcriptionSuggestions.length > 0 && (
               <div>
-                <div className="text-xs font-medium text-gray-700 mb-1">Quick Transcription Types:</div>
+                <div className="text-xs font-medium text-gray-700 mb-1">Quick Task Types:</div>
                 <div className="flex flex-wrap gap-1">
                   {transcriptionSuggestions.map((suggestion, index) => (
                     <button
@@ -301,7 +307,7 @@ const ChatInput = ({
                     ? 'bg-medical-100 text-medical-600'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
-                title="Transcription options"
+                title="Task options"
               >
                 <Settings className="w-4 h-4" />
               </button>
@@ -332,7 +338,7 @@ const ChatInput = ({
             <div className="flex flex-wrap gap-2 text-xs">
               {transcriptionType && (
                 <span className="px-2 py-1 bg-medical-100 text-medical-700 rounded">
-                  Type: {transcriptionType}
+                  Task: {transcriptionType}
                 </span>
               )}
               {outputTemplate && (
@@ -351,7 +357,7 @@ const ChatInput = ({
 
         {/* Help text */}
         <div className="mt-2 text-xs text-gray-500 text-center">
-          Press Shift+Enter for new line, Enter to send. Use options for specialized medical transcription.
+          Press Shift+Enter for new line, Enter to send. Use options for specialized medical tasks.
         </div>
       </div>
     </div>
