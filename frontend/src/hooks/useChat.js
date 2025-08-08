@@ -20,102 +20,87 @@ export const useChat = () => {
   }, [messages, scrollToBottom]);
 
   // Send message
-  const sendMessage = useCallback(async (messageContent, options = {}, attachedFiles = [], taskName = null) => {
-    if (!authToken) {
-      setError('You must be logged in to use the chat.');
-      return;
+const sendMessage = useCallback(async (messageContent, options = {}, attachedFiles = [], taskName = null) => {
+  if (!authToken) {
+    setError('You must be logged in to use the chat.');
+    return;
+  }
+  if (!messageContent.trim()) return;
+
+  setError(null);
+  setIsLoading(true);
+
+  const userMessage = {
+    id: Date.now(),
+    type: 'user',
+    content: messageContent.trim(),
+    timestamp: new Date().toISOString(),
+    user: user?.username || 'User',
+    taskName: taskName || undefined,
+    attachedFiles: attachedFiles.length > 0 ? attachedFiles.map(file => ({
+      name: file.name,
+      type: file.type,
+      size: file.size
+    })) : undefined,
+  };
+
+  setMessages(prev => [...prev, userMessage]);
+
+  try {
+    // Start with the original message
+    let enhancedMessage = messageContent;
+
+    // Keep grammar rules only — remove output template formatting
+    if (options.grammarRules) {
+      enhancedMessage += `\n\nGrammar Requirements:\n${options.grammarRules}`;
     }
-    if (!messageContent.trim()) return;
 
-    setError(null);
-    setIsLoading(true);
+    // Add file info if present
+    if (attachedFiles.length > 0) {
+      enhancedMessage += `\n\nAttached Files: ${attachedFiles.map(f => f.name).join(', ')}`;
+    }
 
-    // Add user message with attached files and task name
-    const userMessage = {
-      id: Date.now(),
-      type: 'user',
-      content: messageContent.trim(),
+    // Send to API
+    const sessionId = authToken;
+
+    const response = await chatAPI.sendMessage(
+      sessionId,
+      enhancedMessage,
+      attachedFiles,
+      taskName
+    );
+
+    // AI response
+    const aiMessage = {
+      id: Date.now() + 1,
+      type: 'assistant',
+      content: response.response,
       timestamp: new Date().toISOString(),
-      user: user?.username || 'User',
-      taskName: taskName || undefined, // Include task name if provided
-      attachedFiles: attachedFiles.length > 0 ? attachedFiles.map(file => ({
-        name: file.name,
-        type: file.type,
-        size: file.size
-      })) : undefined, // Only include if there are files
+      llmProvider: response.llm_provider,
+      model: response.model,
+      sessionId: response.session_id,
+      taskName: taskName || undefined,
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => [...prev, aiMessage]);
+    setIsConnected(true);
+  } catch (error) {
+    console.error('Error sending message:', error);
+    setError(error.response?.data?.detail || 'Failed to send message');
+    setIsConnected(false);
 
-    try {
-      // Enhance the message with medical context if specified
-      let enhancedMessage = messageContent;
-      if (options.transcriptionType) {
-        enhancedMessage = `[${options.transcriptionType.toUpperCase()} TRANSCRIPTION]
-${messageContent}
+    const errorMessage = {
+      id: Date.now() + 1,
+      type: 'error',
+      content: 'Sorry, I encountered an error processing your request. Please try again.',
+      timestamp: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, errorMessage]);
+  } finally {
+    setIsLoading(false);
+  }
+}, [authToken, user]);
 
-Please format this as a professional radiology report with:
-- Proper medical terminology
-- Clear structure and organization
-- Corrected grammar and syntax
-- Standard medical report format`;
-      }
-
-      if (options.outputTemplate) {
-        enhancedMessage += `\n\nOutput Template: ${options.outputTemplate}`;
-      }
-
-      if (options.grammarRules) {
-        enhancedMessage += `\n\nGrammar Requirements: ${options.grammarRules}`;
-      }
-
-      // Add file information to the message if files are attached
-      if (attachedFiles.length > 0) {
-        enhancedMessage += `\n\nAttached Files: ${attachedFiles.map(f => f.name).join(', ')}`;
-      }
-
-      // Use authToken as sessionId
-      const sessionId = authToken;
-
-      // Send to API: Pass token via Authorization header and as sessionId, plus taskName
-      const response = await chatAPI.sendMessage(
-        sessionId, // <-- sessionId is the token!
-        enhancedMessage,
-        attachedFiles,
-        taskName // <-- Pass the task name
-      );
-
-      // Add AI response
-      const aiMessage = {
-        id: Date.now() + 1,
-        type: 'assistant',
-        content: response.response,
-        timestamp: new Date().toISOString(),
-        llmProvider: response.llm_provider,
-        model: response.model,
-        sessionId: response.session_id,
-        taskName: taskName || undefined, // Include task name in response too
-      };
-
-      setMessages(prev => [...prev, aiMessage]);
-      setIsConnected(true);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      setError(error.response?.data?.detail || 'Failed to send message');
-      setIsConnected(false);
-
-      // Add error message
-      const errorMessage = {
-        id: Date.now() + 1,
-        type: 'error',
-        content: 'Sorry, I encountered an error processing your request. Please try again.',
-        timestamp: new Date().toISOString(),
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [authToken, user]);
 
   // Clear chat session
   const clearSession = useCallback(async () => {
