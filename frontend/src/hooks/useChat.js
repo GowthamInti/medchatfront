@@ -20,7 +20,7 @@ export const useChat = () => {
   }, [messages, scrollToBottom]);
 
   // Send message
-  const sendMessage = useCallback(async (messageContent, options = {}, attachedFiles = []) => {
+  const sendMessage = useCallback(async (messageContent, options = {}, attachedFiles = [], taskName = null) => {
     if (!authToken) {
       setError('You must be logged in to use the chat.');
       return;
@@ -30,13 +30,14 @@ export const useChat = () => {
     setError(null);
     setIsLoading(true);
 
-    // Add user message with attached files
+    // Add user message with attached files and task name
     const userMessage = {
       id: Date.now(),
       type: 'user',
       content: messageContent.trim(),
       timestamp: new Date().toISOString(),
       user: user?.username || 'User',
+      taskName: taskName || undefined, // Include task name if provided
       attachedFiles: attachedFiles.length > 0 ? attachedFiles.map(file => ({
         name: file.name,
         type: file.type,
@@ -76,11 +77,12 @@ Please format this as a professional radiology report with:
       // Use authToken as sessionId
       const sessionId = authToken;
 
-      // Send to API: Pass token via Authorization header and as sessionId
+      // Send to API: Pass token via Authorization header and as sessionId, plus taskName
       const response = await chatAPI.sendMessage(
         sessionId, // <-- sessionId is the token!
         enhancedMessage,
         attachedFiles,
+        taskName // <-- Pass the task name
       );
 
       // Add AI response
@@ -92,6 +94,7 @@ Please format this as a professional radiology report with:
         llmProvider: response.llm_provider,
         model: response.model,
         sessionId: response.session_id,
+        taskName: taskName || undefined, // Include task name in response too
       };
 
       setMessages(prev => [...prev, aiMessage]);
@@ -159,6 +162,16 @@ Please format this as a professional radiology report with:
       title: 'Ultrasound',
       prompt: 'Format this ultrasound finding with proper terminology',
       type: 'ultrasound',
+    },
+    {
+      title: 'Grammar Check',
+      prompt: 'Please review and correct the grammar in this medical text',
+      type: 'grammar-correction',
+    },
+    {
+      title: 'Medical Format',
+      prompt: 'Format this text according to medical documentation standards',
+      type: 'medical-formatting',
     },
   ], []);
 
